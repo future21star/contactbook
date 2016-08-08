@@ -1,0 +1,15 @@
+<h1>Send email to invoice@bswsuperstores.com</h1>
+
+<%= form_tag '/upload_to_springboardretail', multipart: true do %>
+	<div>
+	  <%= label_tag(:email, "Please input your email address") %>
+	  <%= text_field_tag(:email) %>
+  </div>
+  <div>
+	  <%= label_tag(:file, "attachment") %>
+	  <%= file_field_tag :file %>
+  </div>
+  <div>
+  	<%= submit_tag "Send" %>
+  </div>
+<% end %>

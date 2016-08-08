@@ -1,0 +1,23 @@
+<% unless @new_pos.empty? %>
+	<table>
+	  <tr>
+	    <th>Item # &nbsp; &nbsp; &nbsp;</th>
+	    <th>Order #</th>
+	    <th>Qty</th>
+	  </tr>
+
+	  <% @new_pos.each do |new_po| %>
+		  <tr>
+		    <td><%= new_po[:item_id] %></td>
+		    <td><%= new_po[:order_id] %></td>
+		    <td><%= new_po[:qty] %></td>
+		  </tr>
+	  <% end %>
+
+	</table>
+	
+	<%= link_to 'Download unauthorized POs', '/download' %>
+
+<% end %>
+
+<h1>Success</h1>
