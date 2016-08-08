@@ -5,7 +5,7 @@ class HomeController < ApplicationController
   end
 
   def upload_receipts
-    debugger
+    #debugger
     xlsx = open_spreadsheet(params[:file])
     File.open("public/prs.xlsx","wb") do |f|
       f.write(params[:file].read)
