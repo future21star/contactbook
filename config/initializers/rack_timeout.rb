@@ -1,2 +1,2 @@
-#Rack::Timeout.service_timeout = 1200  # seconds
-Rack::Timeout.service_timeout = 5 #seconds
+Rails.application.middleware.use Rack::Timeout
+Rack::Timeout.timeout = 1200  # seconds
