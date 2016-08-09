@@ -1,4 +1,5 @@
 require 'roo'
+
 class HomeController < ApplicationController
   @@new_pos = []
   def home
@@ -12,7 +13,7 @@ class HomeController < ApplicationController
     end
 
     #debugger
-    InvoiceMailer.send_pr(params[:email], params[:file]).deliver
+    #InvoiceMailer.send_pr(params[:email], params[:file]).deliver
 
     info = xlsx.sheets.last
     keys= []
@@ -103,7 +104,7 @@ class HomeController < ApplicationController
       response = get_order.query(per_page: 100).get.body[:results]
 
       for order_line in response
-        puts "existing upc:" + order_line[:item_custom][:upc].to_s.downcase + "    " + "new item_id:" + item_lookup.to_s.downcase
+        #puts "existing upc:" + order_line[:item_custom][:upc].to_s.downcase + "    " + "new item_id:" + item_lookup.to_s.downcase
         if order_line[:item_custom][:upc].to_s.downcase == item_lookup.to_s.downcase
           item_id = order_line[:item_id]
           break
@@ -113,7 +114,7 @@ class HomeController < ApplicationController
         qty_temp = qty.to_s + "(unauthorized)"
         new_order_line = springboard["purchasing/orders/" + order_id.to_s + "/lines"]
 
-        puts "Item lookup:::::::::::::::" + item_lookup.to_s
+        #puts "Item lookup:::::::::::::::" + item_lookup.to_s
         new_po_line = new_order_line.post :item_lookup => item_lookup.to_s, :order_id => order_id.to_s, :qty => qty
         #debugger
         if new_po_line.headers['Location']
@@ -123,9 +124,9 @@ class HomeController < ApplicationController
           @@new_pos.push(new_po)
         end
       end
-      response = receipt_line.post :item_lookup => item_lookup.to_s, :qty => qty, :receipt_id => receipt_id unless item_id == nil
+      response = receipt_line.post :item_lookup => item_lookup.to_s, :qty => qty, :receipt_id => receipt_id unless item_lookup.to_s == nil
 
-      puts "----------------------------------------------"
+      #puts "----------------------------------------------"
     end
     @new_pos = @@new_pos
 
@@ -163,10 +164,10 @@ class HomeController < ApplicationController
   private
     def open_spreadsheet(file)
       case File.extname(file.original_filename)
-      when ".csv" then Roo::Csv.new(file.path, nil, :ignore)
-      when ".xls" then Roo::Spreadsheet.open(file.path)
-      when ".xlsx" then Roo::Spreadsheet.open(file.path)
-      else raise "Unknown file type: #{file.original_filename}"
+        when ".csv" then Roo::CSV.new(file.path, nil, :ignore)
+        when ".xls" then Roo::Spreadsheet.open(file.path)
+        when ".xlsx" then Roo::Spreadsheet.open(file.path)
+        else raise "Unknown file type: #{file.original_filename}"
       end
     end
 
