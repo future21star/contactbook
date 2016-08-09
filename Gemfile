@@ -30,6 +30,8 @@ gem 'csv2json'
 gem 'orderedhash'
 gem 'roo'
 gem "spreadsheet", "0.6.5.8"
+gem "rack-timeout"
+
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 
