@@ -1,0 +1,21 @@
+<div id="success">
+  <h1 style="color:red;">  Loading... </h1>
+</div>
+
+<script>
+  $(document).ready(function(){
+    alert("upload");
+    $.ajax({
+        type: "get",
+        url: "/upload",
+        data: {},
+        success:function(data){
+          $("#success").html(data);
+          return false;
+        },
+        error:function(data) {
+          return false;
+        }
+      });
+  });
+</script>

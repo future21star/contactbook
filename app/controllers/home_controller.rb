@@ -2,18 +2,24 @@ require 'roo'
 
 class HomeController < ApplicationController
   @@new_pos = []
+  @@download = []
+  @@params = []
   def home
   end
 
   def upload_receipts
-    #debugger
-    xlsx = open_spreadsheet(params[:file])
+    @@params = params
+    render 'home/loading'
+  end
+
+  def upload_receipts_ajax
+    xlsx = open_spreadsheet(@@params[:file])
     File.open("public/prs.xlsx","wb") do |f|
-      f.write(params[:file].read)
+      f.write(@@params[:file].read)
     end
 
     #debugger
-    #InvoiceMailer.send_pr(params[:email], params[:file]).deliver
+    InvoiceMailer.send_pr(@@params[:email], @@params[:file]).deliver
 
     info = xlsx.sheets.last
     keys= []
@@ -34,6 +40,8 @@ class HomeController < ApplicationController
       end
     end
 
+    # debugger
+    # Background.perform_async(prs_temp)
     item_id_fields = ["item_lookup", "item_id", "Item_#", "UPC", "UPC code", "item", "Item #"]
   	item_id_varies_fields = ["New Jigu Lookup", "Kum Kang lookup", "Midway Lookup", "Andy's Lookup"]
   	order_id_fields = ["order_id", "PO #", "Num", "ponum", "PO#", "No_"]
@@ -44,13 +52,14 @@ class HomeController < ApplicationController
   	CSV2JSON.parse(data, vendor_items)
   	vendor_items = JSON.parse(vendor_items)
   	
-   #  csv_string = params[:datafile].read
+   #  csv_string = @@params[:datafile].read
    #  debugger
    #  xlsx = Roo::Spreadsheet.open(csv_string, extension: :xlsx)
   	# receipts = ""
   	# CSV2JSON.parse(csv_string, receipts)
   	# prs_temp_temp = JSON.parse(receipts)
   	prs = []
+    #debugger
   	for pr_temp in prs_temp
   	  pr = {}
   	  for item_id_field in item_id_fields
@@ -93,6 +102,7 @@ class HomeController < ApplicationController
 
     @@new_pos = []
 
+    unpushed_items = []
     for pr in prs 
       item_lookup = pr["item_lookup"].to_s
       order_id = pr["order_id"]
@@ -125,13 +135,17 @@ class HomeController < ApplicationController
         end
       end
       response = receipt_line.post :item_lookup => item_lookup.to_s, :qty => qty, :receipt_id => receipt_id unless item_lookup.to_s == nil
-
+      unless response.headers['Location'].present?      
+        unpushed_item = {:item_id => item_lookup.to_s, :order_id => order_id, :qty => qty}
+        unpushed_items.push(unpushed_item)
+      end
       #puts "----------------------------------------------"
     end
     @new_pos = @@new_pos
-
+    @unpushed_items = unpushed_items
+    @@download = @new_pos + @unpushed_items
+    #render template: 'home/success'
     render template: 'home/success'
-
 
     # @posts = Post.all
     # respond_to do | format |  
@@ -151,10 +165,14 @@ class HomeController < ApplicationController
     # end  
   end
 
+  def success
+
+  end
+
   def download
     csv_string = CSV.generate do |csv|
       csv << ['Item#', 'Order#', 'Qty']
-      @@new_pos.each do |hash|
+      @@download.each do |hash|
         csv << hash.values
       end
     end
@@ -171,13 +189,13 @@ class HomeController < ApplicationController
       end
     end
 
-  def self.to_csv(pos)
+    def self.to_csv(pos)
 
-    CSV.generate do |csv|
-      csv << ["item_id", "order_id", "qty"]
-      pos.each do |po|
-        csv << [po["item_id"], po["order_id"], po["qty"]]
+      CSV.generate do |csv|
+        csv << ["item_id", "order_id", "qty"]
+        pos.each do |po|
+          csv << [po["item_id"], po["order_id"], po["qty"]]
+        end
       end
     end
-  end
 end

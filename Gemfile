@@ -56,6 +56,7 @@ end
 
 gem 'figaro'
 gem 'puma'
+
 group :development do
   gem 'capistrano'
   gem 'capistrano3-puma'
@@ -63,3 +64,8 @@ group :development do
   gem 'capistrano-bundler', require: false
   gem 'capistrano-rvm'
 end
+
+gem 'sidekiq'
+gem 'sinatra', require: false
+gem 'slim'
+gem 'render_anywhere', :require => false

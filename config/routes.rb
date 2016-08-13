@@ -1,7 +1,12 @@
+require 'sidekiq/web'
+
 Rails.application.routes.draw do
   root :to => 'home#home'
   post '/upload_to_springboardretail' => 'home#upload_receipts'
+  get '/upload' => 'home#upload_receipts_ajax'
   get '/download' => 'home#download'
+  mount Sidekiq::Web, at: '/sidekiq'
+#  mount Sidekiq::Web, at: '/sidekiq'
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 
