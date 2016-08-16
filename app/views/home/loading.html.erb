@@ -16,7 +16,8 @@
     //     timer.stop;
     // }
 
-    $.ajax({
+    setTimeout(function() {
+      $.ajax({
         type: "get",
         url: "/upload_part_0",
         data: {which_part:0},
@@ -25,12 +26,12 @@
           return false;
         },
         error:function(data) {
-          alert(JSON.parse(data));
+          alert(error);
           return false;
         },
         timeout: 1000000 // sets timeout to 3 seconds
       });
-
+    }, 5000);
     // setTimeout(function() {
     //   $.ajax({
     //     type: "get",
