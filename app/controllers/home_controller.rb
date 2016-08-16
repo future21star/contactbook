@@ -32,7 +32,7 @@ class HomeController < ApplicationController
     end
 
     #debugger
-    InvoiceMailer.send_pr(params[:email], params[:file]).deliver
+    #InvoiceMailer.send_pr(params[:email], params[:file]).deliver
 
     info = xlsx.sheets.last
     keys= []
@@ -118,11 +118,11 @@ class HomeController < ApplicationController
     render 'home/loading'
   end
 
-  def upload_receipts_ajax
+  def upload_receipts_ajax_part_0
 
     which_part = params[:which_part]
     prs = @@prs
-
+    #debugger  
     springboard = Springboard::Client.new(
       'https://bsw.myspringboard.us/api',
       token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI5Yjc0Y2M1ZC01ZmFkLTQ1YjItYWRiNS02NTFmNDIyOTEwM2EiLCJpYXQiOjE0NzAzMTA5OTQsInN1YiI6MTAwMDA3LCJhdWQiOjIxNTJ9.LV_VCOaiXAfd03v4Lo71B-N8B9b90HaeZMvivfqHMk0')
@@ -135,14 +135,100 @@ class HomeController < ApplicationController
     receipt_line = @@receipt_line
     @new_pos = []
     @unpushed_items = []
+    debugger
     for pr in prs
-      next if which_part == "0" && prs.index(pr) > prs.length / 2
-      next if which_part == "1" && prs.index(pr) < prs.length / 2
-      if @@break_pos == 0 && prs.index(pr) == prs.length/2
-        @@break_pos = prs.length/2
-        break
+      # next if which_part == "0" && prs.index(pr) > prs.length / 2
+      # next if which_part == "1" && prs.index(pr) < prs.length / 2
+
+      item_lookup = pr["item_lookup"].to_s
+      order_id = pr["order_id"]
+      qty = pr["qty"]
+      item_id = nil
+      
+      order_line_url = "purchasing/orders/" + order_id.to_s + "/lines"
+      get_order = springboard[order_line_url]
+      response = get_order.query(per_page: 100).get.body[:results]
+
+      for order_line in response
+        #puts "existing upc:" + order_line[:item_custom][:upc].to_s.downcase + "    " + "new item_id:" + item_lookup.to_s.downcase
+        if order_line[:item_custom][:upc].to_s.downcase == item_lookup.to_s.downcase
+          item_id = order_line[:item_id]
+          break
+        end
+      end 
+      if item_id == nil
+        qty_temp = qty.to_s + "(unauthorized)"
+        new_order_line = springboard["purchasing/orders/" + order_id.to_s + "/lines"]
+
+        #puts "Item lookup:::::::::::::::" + item_lookup.to_s
+        new_po_line = new_order_line.post :item_lookup => item_lookup.to_s, :order_id => order_id.to_s, :qty => qty
+        #debugger
+        if new_po_line.headers['Location']
+          #item_id = new_po_line[:item_lookup]
+          item_lookup_temp = item_lookup.to_s + "unauthorized"
+          new_po = {:item_id => item_lookup.to_s, :order_id => order_id, :qty => qty_temp}
+          @new_pos.push(new_po)
+        end
       end
-      next if prs.index(pr) < @@break_pos
+      response = receipt_line.post :item_lookup => item_lookup.to_s, :qty => qty, :receipt_id => receipt_id unless item_lookup.to_s == nil
+      unless response.headers['Location'].present?      
+        unpushed_item = {:item_id => item_lookup.to_s, :order_id => order_id, :qty => qty}
+        @unpushed_items.push(unpushed_item)
+      end
+      #@@prs.delete(pr)
+      #puts "----------------------------------------------"
+    end
+    #render template: 'home/success'
+    debugger
+    @@step_new_pos += @new_pos
+    @@step_unpushed_items += @unpushed_items
+    @@download = @@step_new_pos + @@step_unpushed_items
+
+    @final_new_pos = @@step_new_pos
+    @final_unpushed_items = @@step_unpushed_items
+
+    render template: 'home/success'
+
+    # @posts = Post.all
+    # respond_to do | format |  
+    #   format.html # index.html.erb
+    #   format.json { render :json => @posts }
+    #   format.xlsx {
+    #     xlsx_package = Post.to_xlsx
+    #     begin 
+    #       temp = Tempfile.new("posts.xlsx") 
+    #       xlsx_package.serialize temp.path
+    #       send_file temp.path, :filename => "posts.xlsx", :type => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    #     ensure
+    #       temp.close 
+    #       temp.unlink
+    #     end
+    #   }
+    # end  
+  end
+
+  def upload_receipts_ajax_part_1
+
+    which_part = params[:which_part]
+    prs = @@prs
+    #debugger  
+    springboard = Springboard::Client.new(
+      'https://bsw.myspringboard.us/api',
+      token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI5Yjc0Y2M1ZC01ZmFkLTQ1YjItYWRiNS02NTFmNDIyOTEwM2EiLCJpYXQiOjE0NzAzMTA5OTQsInN1YiI6MTAwMDA3LCJhdWQiOjIxNTJ9.LV_VCOaiXAfd03v4Lo71B-N8B9b90HaeZMvivfqHMk0')
+
+    springboard_test = Springboard::Client.new(
+      'https://bsw-test.myspringboard.us/api',
+      token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJmNTMwMmUxOS04YTdhLTQ0M2EtOTM5ZC1jMWMxYWI0NDc3Y2EiLCJpYXQiOjE0NjUxMjY0NTIsInN1YiI6MTAwMDE3LCJhdWQiOjIzODR9.y8VIMOKmVP0-GCYGe1KbSSz2dEQG_79e8wTpa3sa-3g')
+
+    receipt_id = @@receipt_id
+    receipt_line = @@receipt_line
+    @new_pos = []
+    @unpushed_items = []
+    debugger
+    for pr in prs
+      # next if which_part == "0" && prs.index(pr) > prs.length / 2
+      # next if which_part == "1" && prs.index(pr) < prs.length / 2
+
       item_lookup = pr["item_lookup"].to_s
       order_id = pr["order_id"]
       qty = pr["qty"]

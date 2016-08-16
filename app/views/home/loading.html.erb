@@ -4,35 +4,50 @@
 
 <script>
   $(document).ready(function(){
-    alert(); 
+    // var delayInSeconds = 5;
+    // var delayInMilliseconds = delayInSeconds*1000;
+
+    // function startTimer () {
+    //     timer.start();
+    //     setTimeout(stopTimer,delayInMilliseconds);
+    // }
+
+    // function stopTimer () {
+    //     timer.stop;
+    // }
+
     $.ajax({
         type: "get",
-        url: "/upload",
+        url: "/upload_part_0",
         data: {which_part:0},
         success:function(data){
           $("#success").html(data);
-          return true;
-        },
-        error:function(data) {
-          alert(data);
           return false;
         },
-        timeout: 1000 * 150 // sets timeout to 3 seconds
-      });
-    $.ajax({
-        type: "get",
-        url: "/upload",
-        data: {which_part:1},
-        success:function(data){
-          $("#success").html(data);
-          return true;
-        },
         error:function(data) {
-          alert(data);
+          alert(JSON.parse(data));
           return false;
         },
-        timeout: 1000 * 150 // sets timeout to 3 seconds
+        timeout: 1000000 // sets timeout to 3 seconds
       });
+
+    // setTimeout(function() {
+    //   $.ajax({
+    //     type: "get",
+    //     url: "/upload_part_1",
+    //     data: {which_part:1},
+    //     success:function(data){
+    //       $("#success").html(data);
+    //       return false;
+    //     },
+    //     error:function(data) {
+    //       alert(JSON.parse(data))
+    //       return false;
+    //     },
+    //     timeout: 200000// sets timeout to 3 seconds
+    //   }); 
+    // }, 5000);
+
 });
 
 </script>
