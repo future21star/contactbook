@@ -135,7 +135,7 @@ class HomeController < ApplicationController
     receipt_line = @@receipt_line
     @new_pos = []
     @unpushed_items = []
-    debugger
+    #debugger
     for pr in prs
       # next if which_part == "0" && prs.index(pr) > prs.length / 2
       # next if which_part == "1" && prs.index(pr) < prs.length / 2
@@ -179,7 +179,7 @@ class HomeController < ApplicationController
       #puts "----------------------------------------------"
     end
     #render template: 'home/success'
-    debugger
+    #debugger
     @@step_new_pos += @new_pos
     @@step_unpushed_items += @unpushed_items
     @@download = @@step_new_pos + @@step_unpushed_items
@@ -224,7 +224,7 @@ class HomeController < ApplicationController
     receipt_line = @@receipt_line
     @new_pos = []
     @unpushed_items = []
-    debugger
+    #debugger
     for pr in prs
       # next if which_part == "0" && prs.index(pr) > prs.length / 2
       # next if which_part == "1" && prs.index(pr) < prs.length / 2
