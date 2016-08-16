@@ -4,13 +4,14 @@
 
 <script>
   $(document).ready(function(){
+    alert(); 
     $.ajax({
         type: "get",
         url: "/upload",
-        data: {},
+        data: {which_part:0},
         success:function(data){
           $("#success").html(data);
-          return false;
+          return true;
         },
         error:function(data) {
           alert(data);
@@ -18,5 +19,20 @@
         },
         timeout: 1000 * 150 // sets timeout to 3 seconds
       });
-  });
+    $.ajax({
+        type: "get",
+        url: "/upload",
+        data: {which_part:1},
+        success:function(data){
+          $("#success").html(data);
+          return true;
+        },
+        error:function(data) {
+          alert(data);
+          return false;
+        },
+        timeout: 1000 * 150 // sets timeout to 3 seconds
+      });
+});
+
 </script>

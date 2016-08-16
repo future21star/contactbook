@@ -1,18 +1,18 @@
-<% unless @new_pos==nil || @new_pos.empty? %>
+<% unless @final_new_pos==nil || @final_new_pos.empty? %>
 	<table>
 	  <tr>
 	    <th>Item # &nbsp; &nbsp; &nbsp;</th>
 	    <th>Order #</th>
 	    <th>Qty</th>
 	  </tr>
-	  <% @new_pos.each do |new_po| %>
+	  <% @final_new_pos.each do |new_po| %>
   	  <tr>
 		    <td><%= new_po[:item_id] %></td>
 		    <td><%= new_po[:order_id] %></td>
 		    <td><%= new_po[:qty] %></td>
 		  </tr>
 		<% end %>
-		<% @unpushed_items.each do |item| %>
+		<% @final_unpushed_items.each do |item| %>
 		  <tr>
 		    <td style="color:red;"><%= item[:item_id] %></td>
 		    <td style="color:red;"><%= item[:order_id] %></td>

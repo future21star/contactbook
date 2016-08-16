@@ -4,22 +4,35 @@ class HomeController < ApplicationController
   @@new_pos = []
   @@download = []
   @@params = []
+  @@prs = []
+  @@break_pos = 0
+  @@step_new_pos = []
+  @@step_unpushed_items = []
+  @@receipt_id = -1
+  @@receipt_line = -1
+  
   def home
   end
 
   def upload_receipts
     @@params = params
-    render 'home/loading'
-  end
-
-  def upload_receipts_ajax
-    xlsx = open_spreadsheet(@@params[:file])
+    @@new_pos = []
+    @@download = []
+    @@params = []
+    @@prs = []
+    @@break_pos = 0
+    @@step_new_pos = []
+    @@step_unpushed_items = []
+    @@receipt_id = -1
+    @@receipt_line = -1
+    
+    xlsx = open_spreadsheet(params[:file])
     File.open("public/prs.xlsx","wb") do |f|
-      f.write(@@params[:file].read)
+      f.write(params[:file].read)
     end
 
     #debugger
-    InvoiceMailer.send_pr(@@params[:email], @@params[:file]).deliver
+    InvoiceMailer.send_pr(params[:email], params[:file]).deliver
 
     info = xlsx.sheets.last
     keys= []
@@ -43,49 +56,49 @@ class HomeController < ApplicationController
     # debugger
     # Background.perform_async(prs_temp)
     item_id_fields = ["item_lookup", "item_id", "Item_#", "UPC", "UPC code", "item", "Item #"]
-  	item_id_varies_fields = ["New Jigu Lookup", "Kum Kang lookup", "Midway Lookup", "Andy's Lookup"]
-  	order_id_fields = ["order_id", "PO #", "Num", "ponum", "PO#", "No_"]
-  	qty_fields = ["qy", "ORDER_QTY", "PO Line Qty", "QTY", "qty", "qtyshp", "PO_Qty", "qtyshp", "Qty", "Quantity (Base)", "qtyshp", "PO Line Qty"]
+    item_id_varies_fields = ["New Jigu Lookup", "Kum Kang lookup", "Midway Lookup", "Andy's Lookup"]
+    order_id_fields = ["order_id", "PO #", "Num", "ponum", "PO#", "No_"]
+    qty_fields = ["qy", "ORDER_QTY", "PO Line Qty", "QTY", "qty", "qtyshp", "PO_Qty", "qtyshp", "Qty", "Quantity (Base)", "qtyshp", "PO Line Qty"]
 
-  	vendor_items = ""
-  	data = File.read(Rails.root.join("public","vendor_items.csv"))
-  	CSV2JSON.parse(data, vendor_items)
-  	vendor_items = JSON.parse(vendor_items)
-  	
+    vendor_items = ""
+    data = File.read(Rails.root.join("public","vendor_items.csv"))
+    CSV2JSON.parse(data, vendor_items)
+    vendor_items = JSON.parse(vendor_items)
+    
    #  csv_string = @@params[:datafile].read
    #  debugger
    #  xlsx = Roo::Spreadsheet.open(csv_string, extension: :xlsx)
-  	# receipts = ""
-  	# CSV2JSON.parse(csv_string, receipts)
-  	# prs_temp_temp = JSON.parse(receipts)
-  	prs = []
+    # receipts = ""
+    # CSV2JSON.parse(csv_string, receipts)
+    # prs_temp_temp = JSON.parse(receipts)
+    prs = []
     #debugger
-  	for pr_temp in prs_temp
-  	  pr = {}
-  	  for item_id_field in item_id_fields
-  		  pr["item_lookup"] = pr_temp[item_id_field] if pr_temp[item_id_field]!=nil
-  	  end
-  	  for item_id_varies_field in item_id_varies_fields
-    		if pr_temp[item_id_varies_field]!=nil
-    		  vender_str = vendor_str.slice![0..item_id_varies_field.length - 7]
-    		  for vendor_item in vendor_items
-    		    if vendor_item["VENDOR"] == vendor_str && vendor_item["Item #"] == pr_temp[item_id_variesfield]
-    		      pr["item_lookup"] = vendor_item["Vendor Item #"]
-    		      break
-    		    end
-    		  end
-    		end
-  	  end
-  	  for order_id_field in order_id_fields
-  		  pr["order_id"] = pr_temp[order_id_field] if pr_temp[order_id_field]!=nil
-  	  end
-  	  for qty_field in qty_fields
-  		  pr["qty"] = pr_temp[qty_field] if pr_temp[qty_field]!=nil
-  	  end
-  	  if pr["item_lookup"] != nil && pr["order_id"] != nil && pr["qty"] != nil
-  		  prs.push(pr)
-  	  end
-  	end
+    for pr_temp in prs_temp
+      pr = {}
+      for item_id_field in item_id_fields
+        pr["item_lookup"] = pr_temp[item_id_field] if pr_temp[item_id_field]!=nil
+      end
+      for item_id_varies_field in item_id_varies_fields
+        if pr_temp[item_id_varies_field]!=nil
+          vender_str = vendor_str.slice![0..item_id_varies_field.length - 7]
+          for vendor_item in vendor_items
+            if vendor_item["VENDOR"] == vendor_str && vendor_item["Item #"] == pr_temp[item_id_variesfield]
+              pr["item_lookup"] = vendor_item["Vendor Item #"]
+              break
+            end
+          end
+        end
+      end
+      for order_id_field in order_id_fields
+        pr["order_id"] = pr_temp[order_id_field] if pr_temp[order_id_field]!=nil
+      end
+      for qty_field in qty_fields
+        pr["qty"] = pr_temp[qty_field] if pr_temp[qty_field]!=nil
+      end
+      if pr["item_lookup"] != nil && pr["order_id"] != nil && pr["qty"] != nil
+        prs.push(pr)
+      end
+    end
 
     springboard = Springboard::Client.new(
       'https://bsw.myspringboard.us/api',
@@ -97,13 +110,39 @@ class HomeController < ApplicationController
     new_receipt = springboard["purchasing/receipts"]
     response = new_receipt.post :order_id => prs[0]["order_id"]
     line_url = response.headers['Location'][4..-1] + "/lines"
-    receipt_id = response.headers['Location'][25..-1]
-    receipt_line = springboard[line_url]
+    
+    @@receipt_id = response.headers['Location'][25..-1]
+    @@receipt_line = springboard[line_url]
+    @@prs = prs
+    @@count = prs.length / 2
+    render 'home/loading'
+  end
 
-    @@new_pos = []
+  def upload_receipts_ajax
 
-    unpushed_items = []
-    for pr in prs 
+    which_part = params[:which_part]
+    prs = @@prs
+
+    springboard = Springboard::Client.new(
+      'https://bsw.myspringboard.us/api',
+      token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI5Yjc0Y2M1ZC01ZmFkLTQ1YjItYWRiNS02NTFmNDIyOTEwM2EiLCJpYXQiOjE0NzAzMTA5OTQsInN1YiI6MTAwMDA3LCJhdWQiOjIxNTJ9.LV_VCOaiXAfd03v4Lo71B-N8B9b90HaeZMvivfqHMk0')
+
+    springboard_test = Springboard::Client.new(
+      'https://bsw-test.myspringboard.us/api',
+      token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJmNTMwMmUxOS04YTdhLTQ0M2EtOTM5ZC1jMWMxYWI0NDc3Y2EiLCJpYXQiOjE0NjUxMjY0NTIsInN1YiI6MTAwMDE3LCJhdWQiOjIzODR9.y8VIMOKmVP0-GCYGe1KbSSz2dEQG_79e8wTpa3sa-3g')
+
+    receipt_id = @@receipt_id
+    receipt_line = @@receipt_line
+    @new_pos = []
+    @unpushed_items = []
+    for pr in prs
+      next if which_part == "0" && prs.index(pr) > prs.length / 2
+      next if which_part == "1" && prs.index(pr) < prs.length / 2
+      if @@break_pos == 0 && prs.index(pr) == prs.length/2
+        @@break_pos = prs.length/2
+        break
+      end
+      next if prs.index(pr) < @@break_pos
       item_lookup = pr["item_lookup"].to_s
       order_id = pr["order_id"]
       qty = pr["qty"]
@@ -131,20 +170,26 @@ class HomeController < ApplicationController
           #item_id = new_po_line[:item_lookup]
           item_lookup_temp = item_lookup.to_s + "unauthorized"
           new_po = {:item_id => item_lookup.to_s, :order_id => order_id, :qty => qty_temp}
-          @@new_pos.push(new_po)
+          @new_pos.push(new_po)
         end
       end
       response = receipt_line.post :item_lookup => item_lookup.to_s, :qty => qty, :receipt_id => receipt_id unless item_lookup.to_s == nil
       unless response.headers['Location'].present?      
         unpushed_item = {:item_id => item_lookup.to_s, :order_id => order_id, :qty => qty}
-        unpushed_items.push(unpushed_item)
+        @unpushed_items.push(unpushed_item)
       end
+      #@@prs.delete(pr)
       #puts "----------------------------------------------"
     end
-    @new_pos = @@new_pos
-    @unpushed_items = unpushed_items
-    @@download = @new_pos + @unpushed_items
     #render template: 'home/success'
+    #debugger
+    @@step_new_pos += @new_pos
+    @@step_unpushed_items += @unpushed_items
+    @@download = @@step_new_pos + @@step_unpushed_items
+
+    @final_new_pos = @@step_new_pos
+    @final_unpushed_items = @@step_unpushed_items
+
     render template: 'home/success'
 
     # @posts = Post.all
