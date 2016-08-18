@@ -37,7 +37,7 @@ class HomeController < ApplicationController
     info = xlsx.sheets.last
     keys= []
     prs_temp = []
-    prs_temp_count = 0
+    prs_temp_count = 0    
     xlsx.each_with_pagename do |name, sheet|
       prs_temp_count = sheet.column(1).length - 1
       keys = sheet.row(1)
@@ -115,6 +115,11 @@ class HomeController < ApplicationController
     @@receipt_line = springboard[line_url]
     @@prs = prs
     @@count = prs.length / 2
+
+    # @receipt_id = response.headers['Location'][25..-1]
+    # @receipt_line = springboard[line_url]
+    # @prs = prs
+
     render 'home/loading'
   end
 
